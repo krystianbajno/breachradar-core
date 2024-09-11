@@ -1,13 +1,16 @@
 import os
 
 class MigrationServiceProvider:
-    def __init__(self, app, migration_file='migrations/20240830_all_migrations.sql'):
+    def __init__(self, app, migration_file='core/migrations/20240830_initial_migration.sql'):
         self.app = app
         self.migration_file = migration_file
 
     def register(self):
-        self.app.bind('MigrationService', lambda app: self)
+        self.app.bind('MigrationService', lambda: self)
 
+    def boot(self):
+        pass
+    
     def run_migrations_if_needed(self):
         postgres_repo = self.app.make('PostgresRepository')
         connection = postgres_repo.get_connection()
@@ -45,15 +48,12 @@ class MigrationServiceProvider:
         print(f"Applying migration: {migration_file}")
         migration_path = os.path.join(os.getcwd(), migration_file)
 
-        # Read the SQL content from the file
         with open(migration_path, 'r') as file:
             migration_sql = file.read()
 
         try:
             with connection.cursor() as cursor:
-                # Execute the SQL from the migration file
                 cursor.execute(migration_sql)
-                # Record the migration in the migrations table
                 cursor.execute(
                     "INSERT INTO migrations (migration_filename) VALUES (%s);",
                     (os.path.basename(migration_file),)

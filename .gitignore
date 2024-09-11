@@ -1,5 +1,7 @@
 data/local_ingest/*
 data/scraps/*
+data/postgres_data/*
+data/es_data/*
 .env
 
 # Created by https://www.toptal.com/developers/gitignore/api/python

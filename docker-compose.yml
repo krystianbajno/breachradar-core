@@ -7,9 +7,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d/
     networks:
       - cti_network
     healthcheck:
@@ -24,9 +25,9 @@ services:
     environment:
       discovery.type: single-node
     ports:
-      - "${ELASTICSEARCH_PORT}:9200"
+      - "9200:9200"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - ./data/es_data:/usr/share/elasticsearch/data
     networks:
       - cti_network
     healthcheck:
@@ -39,17 +40,8 @@ services:
 volumes:
   postgres_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /var/lib/postgresql/data
   es_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /usr/share/elasticsearch/data
 
 networks:
   cti_network:
-

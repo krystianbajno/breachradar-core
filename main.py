@@ -9,24 +9,23 @@ from core.ecs.ecs_manager import ECSManager
 
 def main():
     config = Config()
-
     app = App()
 
     app.bind('config', lambda: config)
-
+    
     app.register(AppServiceProvider)
     app.register(AppEntityProvider)
     app.register(AppSystemProvider)
     app.register(MigrationServiceProvider)
 
-    app.make(MigrationServiceProvider).run_migrations_if_needed()
+    app.make('MigrationService').run_migrations_if_needed()
 
     app.boot()
 
     ecs_manager = ECSManager(app)
     ecs_manager.run()
 
-    app.run_systems(lambda entities: time.sleep(entities["settings"].get_component_by_id("system_tick")))
+    app.run_systems(lambda x: time.sleep(config.get("system_tick", 1)))
 
 if __name__ == "__main__":
     main()

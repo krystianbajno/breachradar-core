@@ -1,22 +1,27 @@
-from core.repositories.elastic_repository import ElasticRepository
 from core.repositories.postgres_repository import PostgresRepository
 from core.systems.collector_system import CollectorSystem
 from core.systems.processing_system import ProcessingSystem
+from core.plugins.plugin_loader import PluginLoader
 
 class AppSystemProvider:
     def __init__(self, app):
         self.app = app
+        self.plugin_loader = PluginLoader(app)
 
     def boot(self):
         postgres_repo = self.app.make(PostgresRepository.__name__)
-        elastic_repo = self.app.make(ElasticRepository.__name__)
+        event_system = self.app.make('EventSystem')
 
-        self.app.add_system(lambda app: CollectorSystem(
-            postgres_repo,
-            elastic_repo
-        ))
+        self.plugin_loader.load_plugins()
 
-        self.app.add_system(lambda app: ProcessingSystem(
-            postgres_repo,
-            elastic_repo
-        ))
+        collectors = self.plugin_loader.get_plugins('collector')
+        processors = self.plugin_loader.get_plugins('processor')
+
+        collector_system = CollectorSystem(event_system, collectors)
+        processing_system = ProcessingSystem(event_system, processors, postgres_repo)
+
+        self.app.add_system(lambda app: collector_system)
+        self.app.add_system(lambda app: processing_system)
+
+    def register(self):
+        pass

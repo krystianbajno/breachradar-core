@@ -1,4 +1,4 @@
-# config.yaml
+system_tick: 1
 
 postgres:
   database: cti_breach_hunter
@@ -10,7 +10,4 @@ postgres:
 elasticsearch:
   host: localhost
   port: 9200
-
-settings:
-  system_tick: 0.1
-  should_update: true
+  scheme: http

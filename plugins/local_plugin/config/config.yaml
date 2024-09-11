@@ -1,3 +1,2 @@
-local:
-  enabled: true
-  watch_directory: "./data/local_ingest"
+enabled: true
+watch_directory: "./data/local_ingest"

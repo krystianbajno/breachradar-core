@@ -1,3 +1,4 @@
+# core/config/config.py
 import os
 import yaml
 from dotenv import load_dotenv
@@ -5,6 +6,7 @@ import logging
 
 class Config:
     def __init__(self, env_file='.env', config_file='config.yaml'):
+        # Load .env variables into the environment
         load_dotenv(env_file)
 
         self.logger = logging.getLogger(__name__)
@@ -13,7 +15,11 @@ class Config:
         handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         self.logger.addHandler(handler)
 
+        # Load config data from YAML
         self.config_data = self._load_config_file(config_file)
+
+        # Override config with environment variables
+        self._override_with_env_variables()
 
     def _load_config_file(self, config_file):
         if not os.path.exists(config_file):
@@ -28,11 +34,20 @@ class Config:
             self.logger.error(f"Error parsing YAML config: {e}")
             return {}
 
+    def _override_with_env_variables(self):
+        """Override the config with environment variables."""
+        for key, value in os.environ.items():
+            # Split nested keys by '__' and update the config accordingly
+            if '__' in key:
+                keys = key.lower().split('__')
+                config_section = self.config_data
+                for subkey in keys[:-1]:
+                    config_section = config_section.setdefault(subkey, {})
+                config_section[keys[-1]] = value
+            else:
+                self.config_data[key.lower()] = value
+
     def get(self, key, default=None):
-        value = os.getenv(key)
-        if value is not None:
-            return value
-        
         keys = key.split('.')
         config_value = self.config_data
         try:
@@ -43,17 +58,25 @@ class Config:
             self.logger.warning(f"Key {key} not found in config, using default {default}")
             return default
 
+    def set(self, key, value):
+        keys = key.split('.')
+        config_section = self.config_data
+        for k in keys[:-1]:
+            config_section = config_section.setdefault(k, {})
+        config_section[keys[-1]] = value
+
     def get_postgres_config(self):
         return {
-            "database": self.get('POSTGRES_DB', 'cti_breach_hunter'),
-            "user": self.get('POSTGRES_USER', 'cti_user'),
-            "password": self.get('POSTGRES_PASSWORD', 'cti_password'),
-            "host": self.get('POSTGRES_HOST', 'localhost'),
-            "port": self.get('POSTGRES_PORT', '5432'),
+            "database": self.get('postgres.database', 'cti_breach_hunter'),
+            "user": self.get('postgres.user', 'cti_user'),
+            "password": self.get('postgres.password', 'cti_password'),
+            "host": self.get('postgres.host', 'localhost'),
+            "port": self.get('postgres.port', '5432'),
         }
 
     def get_elasticsearch_config(self):
         return {
-            "host": self.get('ELASTICSEARCH_HOST', 'localhost'),
-            "port": self.get('ELASTICSEARCH_PORT', 9200),
+            "host": self.get('elasticsearch.host', 'localhost'),
+            "port": int(self.get('elasticsearch.port', 9200)),
+            "scheme": self.get('elasticsearch.scheme', 'http')
         }
