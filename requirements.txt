@@ -1,0 +1,6 @@
+requests
+python-telegram-bot
+elasticsearch
+logstash
+psycopg2-binary
+python-dotenv

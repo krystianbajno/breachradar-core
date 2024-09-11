@@ -1,0 +1,3 @@
+local:
+  enabled: true
+  watch_directory: "./data/local_ingest"

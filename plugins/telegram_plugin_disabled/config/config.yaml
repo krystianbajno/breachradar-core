@@ -1,0 +1,6 @@
+# /plugins/telegram_plugin/config/config.yaml
+telegram:
+  enabled: true
+  api_id: "<your_api_id>"
+  api_hash: "<your_api_hash>"
+  phone: "<your_phone_number>"
