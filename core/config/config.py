@@ -31,7 +31,6 @@ class Config:
             return {}
 
     def _override_with_env_variables(self):
-        """Override the config with environment variables."""
         for key, value in os.environ.items():
             if '__' in key:
                 keys = key.lower().split('__')

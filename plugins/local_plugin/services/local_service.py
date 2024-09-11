@@ -61,7 +61,6 @@ class LocalService:
         return hashlib.sha256(file_content).hexdigest()
 
     def start_directory_monitor(self, callback):
-        """Start directory monitoring in a separate thread."""
         event_handler = LocalFileEventHandler(callback)
         observer = watchdog.observers.Observer()
         observer.schedule(event_handler, self.directory, recursive=False)
@@ -71,7 +70,6 @@ class LocalService:
         self.monitor_thread.start()
 
     def _run_monitor(self, observer):
-        """Method to start and run the observer loop in the background."""
         observer.start()
         print(f"Started monitoring directory: {self.directory}")
 

@@ -10,7 +10,6 @@ class PostgresRepository:
         self.conn = self._connect()
 
     def _connect(self):
-        """Establishes a new connection to the database."""
         try:
             return psycopg2.connect(**self.config)
         except psycopg2.Error as e:
@@ -18,7 +17,6 @@ class PostgresRepository:
             raise
 
     def get_connection(self):
-        """Reconnects if the connection is closed or None."""
         if self.conn is None or self.conn.closed:
             self.logger.info("Reconnecting to PostgreSQL...")
             self.conn = self._connect()
@@ -41,7 +39,6 @@ class PostgresRepository:
             self.logger.error(f"Failed to save scrap {scrap.hash}: {e}")
             
     def get_latest_scrap(self, file_hash):
-        """Get the most recent scrape by hash."""
         query = """
         SELECT hash, file_path, parent_scrape_id, timestamp
         FROM scrapes 
@@ -121,7 +118,6 @@ class PostgresRepository:
             self.logger.error(f"Failed to update scrap {scrap_hash}: {e}")
 
     def get_unprocessed_scraps(self):
-        """Fetch scraps that are not yet processed."""
         query = "SELECT hash, file_path, source, timestamp FROM scrapes WHERE state != 'PROCESSED'"
         try:
             conn = self.get_connection()
@@ -142,7 +138,6 @@ class PostgresRepository:
             return []
 
     def get_credential_regexes(self):
-        """Fetch the regex patterns for detecting credentials."""
         query = "SELECT pattern FROM credential_patterns"
         try:
             conn = self.get_connection()

@@ -23,7 +23,6 @@ class LocalCollector(CollectorInterface):
         self.process_files([file_meta])
 
     def process_files(self, files):
-        """Process a list of files and save them if they haven't been scraped already."""
         scrapes = []
         for file_meta in files:
             if self.file_already_scraped(file_meta['hash']):
@@ -39,7 +38,6 @@ class LocalCollector(CollectorInterface):
         return scrapes
 
     def create_scrap(self, file_meta):
-        """Create a Scrap object and hash its content."""
         file_hash = self.hash_content(file_meta['content'])
         creation_time = self._get_file_creation_time(file_meta['file_path'])
 
@@ -53,17 +51,14 @@ class LocalCollector(CollectorInterface):
         )
 
     def file_already_scraped(self, file_hash):
-        """Check if a file with the given hash has already been scraped."""
         existing_scrap = self.repository.get_scrap_by_hash(file_hash)
         return existing_scrap is not None
 
     @staticmethod
     def hash_content(content):
-        """Hash the content using SHA-256."""
         return hashlib.sha256(content).hexdigest()
 
     def _get_file_creation_time(self, file_path):
-        """Get the creation time of the file."""
         try:
             return time.ctime(os.path.getctime(file_path))
         except OSError:

@@ -27,7 +27,6 @@ class MigrationServiceProvider:
             connection.close()
 
     def _ensure_migrations_table(self, connection):
-        """Ensure the migrations table exists to track applied migrations."""
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS migrations (
             id SERIAL PRIMARY KEY,
@@ -44,7 +43,6 @@ class MigrationServiceProvider:
                 print(f"Error ensuring migrations table exists: {e}")
 
     def _get_applied_migrations(self, connection):
-        """Fetch the list of already applied migrations from the migrations table."""
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT migration_filename FROM migrations;")
@@ -55,12 +53,10 @@ class MigrationServiceProvider:
         return applied_migrations
 
     def _get_migration_files(self):
-        """Retrieve the list of migration files from the migrations directory."""
         migration_files = sorted(f for f in os.listdir(self.migrations_dir) if f.endswith('.sql'))
         return migration_files
 
     def _apply_migration(self, connection, migration_file):
-        """Apply a single migration file within its own transaction."""
         migration_path = os.path.join(self.migrations_dir, migration_file)
         print(f"Applying migration: {migration_file}")
 

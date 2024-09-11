@@ -8,10 +8,7 @@ class LocalPluginProvider(PluginProvider):
         super().__init__(app)
 
     def register(self):
-        """Register LocalPlugin-specific services, collectors, and processors."""
-
         self.app.bind('LocalService', lambda: LocalService(system_tick=self.app.configuration.get("system_tick")))
-
 
         local_collector = LocalCollector(self.app)
         local_processor = LocalProcessor(self.app)

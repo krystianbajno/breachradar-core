@@ -12,7 +12,6 @@ class PluginLoader:
         }
 
     def load_plugins(self):
-        """Load all plugin providers dynamically and register them."""
         for plugin_name in os.listdir(self.plugin_directory):
 
             plugin_config_path = os.path.join(self.plugin_directory, plugin_name, 'config', 'config.yaml')
@@ -44,7 +43,6 @@ class PluginLoader:
                 print(f"Failed to load provider for plugin '{plugin_name}': {e}")
 
     def get_plugins(self, plugin_type):
-        """Return all loaded plugins of a specific type (collector or processor)."""
         if plugin_type in ['collector', 'processor']:
             return self.loaded_plugins[f'{plugin_type}s']
         else:
