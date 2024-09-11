@@ -31,6 +31,28 @@ class PostgresRepository:
             self.logger.error(f"Failed to fetch scrap by filename {filename}: {e}")
             return None
 
+    def get_scrap_by_hash(self, file_hash):
+        query = "SELECT hash, file_path FROM scrapes WHERE hash = %s"
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(query, (file_hash,))
+                result = cursor.fetchone()
+                return result
+        except Exception as e:
+            self.logger.error(f"Failed to fetch scrap by hash {file_hash}: {e}")
+            return None
+
+    def update_scrap_state(self, scrap_hash, state):
+        query = "UPDATE scrapes SET state = %s WHERE hash = %s"
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(query, (state, scrap_hash))
+            self.conn.commit()
+            self.logger.info(f"Scrap {scrap_hash} updated to state {state}.")
+        except Exception as e:
+            self.conn.rollback()
+            self.logger.error(f"Failed to update scrap {scrap_hash}: {e}")
+
     def close(self):
         self.conn.close()
         self.logger.info("Postgres connection closed.")

@@ -43,6 +43,9 @@ class App:
         return self.services[name]
 
     def run_systems(self, tick: Callable):
+        """
+        Run all systems in parallel and invoke the tick function for periodic tasks.
+        """
         def run_system(system):
             while True:
                 system.handle(self.entities)
@@ -53,5 +56,8 @@ class App:
             thread.start()
 
     def boot(self):
+        """
+        Boot all providers to ensure all services and systems are ready.
+        """
         for provider in self.providers:
             provider.boot()
