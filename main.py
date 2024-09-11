@@ -12,13 +12,15 @@ def main():
     app = App()
 
     app.bind('config', lambda: config)
+    app.configuration = config
     
     app.register(AppServiceProvider)
+    
+    app.register(MigrationServiceProvider)
+    app.make('MigrationService').run_migrations_if_needed()
+
     app.register(AppEntityProvider)
     app.register(AppSystemProvider)
-    app.register(MigrationServiceProvider)
-
-    app.make('MigrationService').run_migrations_if_needed()
 
     app.boot()
 

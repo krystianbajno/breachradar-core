@@ -7,9 +7,10 @@ import watchdog.observers
 import threading
 
 class LocalService:
-    def __init__(self, directory="./data/local_ingest"):
+    def __init__(self, directory="./data/local_ingest", system_tick = None):
         self.directory = directory
         self.monitor_thread = None
+        self.system_tick = system_tick
 
     def fetch_scrape_files(self):
         scrape_files = []
@@ -66,7 +67,7 @@ class LocalService:
         observer.schedule(event_handler, self.directory, recursive=False)
         
         self.monitor_thread = threading.Thread(target=self._run_monitor, args=(observer,))
-        self.monitor_thread.daemon = True  # Set as a daemon thread so it doesn't block the program from exiting
+        self.monitor_thread.daemon = True
         self.monitor_thread.start()
 
     def _run_monitor(self, observer):
@@ -76,7 +77,7 @@ class LocalService:
 
         try:
             while True:
-                time.sleep(1) 
+                time.sleep(self.system_tick) 
         except KeyboardInterrupt:
             observer.stop()
 

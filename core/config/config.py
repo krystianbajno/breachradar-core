@@ -1,4 +1,3 @@
-# core/config/config.py
 import os
 import yaml
 from dotenv import load_dotenv
@@ -6,7 +5,6 @@ import logging
 
 class Config:
     def __init__(self, env_file='.env', config_file='config.yaml'):
-        # Load .env variables into the environment
         load_dotenv(env_file)
 
         self.logger = logging.getLogger(__name__)
@@ -15,10 +13,8 @@ class Config:
         handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         self.logger.addHandler(handler)
 
-        # Load config data from YAML
         self.config_data = self._load_config_file(config_file)
 
-        # Override config with environment variables
         self._override_with_env_variables()
 
     def _load_config_file(self, config_file):
@@ -37,7 +33,6 @@ class Config:
     def _override_with_env_variables(self):
         """Override the config with environment variables."""
         for key, value in os.environ.items():
-            # Split nested keys by '__' and update the config accordingly
             if '__' in key:
                 keys = key.lower().split('__')
                 config_section = self.config_data
@@ -78,5 +73,7 @@ class Config:
         return {
             "host": self.get('elasticsearch.host', 'localhost'),
             "port": int(self.get('elasticsearch.port', 9200)),
-            "scheme": self.get('elasticsearch.scheme', 'http')
+            "scheme": self.get('elasticsearch.scheme', 'http'),
+            "user": self.get('elasticsearch.user', 'elastic'),
+            "password": self.get('elasticsearch.password', 'password')
         }

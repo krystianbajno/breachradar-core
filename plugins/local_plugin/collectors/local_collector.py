@@ -1,13 +1,13 @@
+import os
+import time
 from core.collectors.collector_interface import CollectorInterface
 from core.entities.scrap import Scrap
-from core.repositories.postgres_repository import PostgresRepository
-from plugins.local_plugin.services.local_service import LocalService
 import hashlib
 
 class LocalCollector(CollectorInterface):
     def __init__(self, app):
-        self.source = LocalService()
-        self.repository = app.make(PostgresRepository.__name__)
+        self.source = app.make('LocalService')
+        self.repository = app.make('PostgresRepository')
         self.start_directory_monitor()
 
     def collect(self):
@@ -41,11 +41,14 @@ class LocalCollector(CollectorInterface):
     def create_scrap(self, file_meta):
         """Create a Scrap object and hash its content."""
         file_hash = self.hash_content(file_meta['content'])
+        creation_time = self._get_file_creation_time(file_meta['file_path'])
+
         return Scrap(
             source='local',
             content=file_meta['content'],
             filename=file_meta['filename'],
             file_path=file_meta["file_path"],
+            timestamp=creation_time,
             hash=file_hash
         )
 
@@ -58,3 +61,10 @@ class LocalCollector(CollectorInterface):
     def hash_content(content):
         """Hash the content using SHA-256."""
         return hashlib.sha256(content).hexdigest()
+
+    def _get_file_creation_time(self, file_path):
+        """Get the creation time of the file."""
+        try:
+            return time.ctime(os.path.getctime(file_path))
+        except OSError:
+            return None

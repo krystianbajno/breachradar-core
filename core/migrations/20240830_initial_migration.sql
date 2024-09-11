@@ -1,3 +1,8 @@
+CREATE TABLE IF NOT EXISTS credential_patterns (
+    id SERIAL PRIMARY KEY,
+    pattern TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS scrapes (
     hash VARCHAR PRIMARY KEY,
     source VARCHAR,
@@ -5,7 +10,8 @@ CREATE TABLE IF NOT EXISTS scrapes (
     file_path TEXT,
     scrape_time TIMESTAMP DEFAULT NOW(),
     state VARCHAR,
-    parent_scrape_id VARCHAR REFERENCES scrapes(hash)
+    parent_scrape_id VARCHAR REFERENCES scrapes(hash),
+    timestamp TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS identities (

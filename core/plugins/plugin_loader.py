@@ -1,5 +1,5 @@
-import importlib
 import os
+import importlib
 import yaml
 
 class PluginLoader:
@@ -12,46 +12,36 @@ class PluginLoader:
         }
 
     def load_plugins(self):
-        """Load all plugins based on file names ('collector' or 'processor')."""
+        """Load all plugin providers dynamically and register them."""
         for plugin_name in os.listdir(self.plugin_directory):
-            plugin_path = os.path.join(self.plugin_directory, plugin_name)
-            plugin_config_path = os.path.join(plugin_path, 'config', 'config.yaml')
+
+            plugin_config_path = os.path.join(self.plugin_directory, plugin_name, 'config', 'config.yaml')
 
             if os.path.isfile(plugin_config_path):
+
                 with open(plugin_config_path, 'r') as config_file:
-                    config = yaml.safe_load(config_file)
-                    if config.get('enabled', False):
-                        self._load_plugin(plugin_name)
+                    plugin_config = yaml.safe_load(config_file)
 
-    def _load_plugin(self, plugin_name):
-        """Dynamically load plugin based on file names ('collector' or 'processor')."""
-        plugin_path = os.path.join(self.plugin_directory, plugin_name)
-        for root, _, files in os.walk(plugin_path):
-            for file in files:
-                if file.endswith("_collector.py"):
-                    self._load_plugin_type(plugin_name, 'collector', root, file)
-                elif file.endswith("_processor.py"):
-                    self._load_plugin_type(plugin_name, 'processor', root, file)
+                if not plugin_config.get('enabled', False):
+                    print(f"Plugin '{plugin_name}' is disabled, skipping...")
+                    continue
 
-    def _load_plugin_type(self, plugin_name, plugin_type, root, file):
-        """Load the plugin type ('collector' or 'processor') and instantiate it."""
-        try:
-            module_rel_path = os.path.relpath(os.path.join(root, file), self.plugin_directory).replace(os.sep, ".").replace(".py", "")
-            module_path = f"{self.plugin_directory}.{module_rel_path}"
+            plugin_provider_module = f"{self.plugin_directory}.{plugin_name}.providers.{plugin_name}_provider"
+            
+            try:
+                provider_module = importlib.import_module(plugin_provider_module)
 
-            module = importlib.import_module(module_path)
-                        
-            class_name = ''.join([word.capitalize() for word in file.replace('.py', '').split('_')])
+                provider_class_name = ''.join([word.capitalize() for word in plugin_name.split('_')]) + "Provider"
+                provider_class = getattr(provider_module, provider_class_name)
 
-            plugin_class = getattr(module, class_name)
-                        
-            plugin_instance = plugin_class(self.app)
+                provider_instance = provider_class(self.app)
+                provider_instance.register()
 
-            self.loaded_plugins[f'{plugin_type}s'].append(plugin_instance)
+                self.loaded_plugins['collectors'].extend(provider_instance.get_collectors())
+                self.loaded_plugins['processors'].extend(provider_instance.get_processors())
 
-            print(self.loaded_plugins)
-        except (ImportError, AttributeError) as e:
-            print(f"Failed to load {plugin_type} for plugin '{plugin_name}': {e}")
+            except (ImportError, AttributeError) as e:
+                print(f"Failed to load provider for plugin '{plugin_name}': {e}")
 
     def get_plugins(self, plugin_type):
         """Return all loaded plugins of a specific type (collector or processor)."""
