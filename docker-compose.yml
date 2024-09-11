@@ -10,7 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
-      - ./docker:/docker-entrypoint-initdb.d/
+      - ./setup:/docker-entrypoint-initdb.d/
     networks:
       - cti_network
     healthcheck:
@@ -30,7 +30,7 @@ services:
       - "9200:9200"
     volumes:
       - ./data/es_data:/usr/share/elasticsearch/data
-      - ./docker/init_kibana.sh:/usr/share/elasticsearch/init-elasticsearch.sh
+      - ./setup/init_kibana.sh:/usr/share/elasticsearch/init-elasticsearch.sh
     networks:
       - cti_network
     entrypoint: ["/usr/share/elasticsearch/init-elasticsearch.sh"]
