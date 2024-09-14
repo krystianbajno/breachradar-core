@@ -21,6 +21,8 @@ class LocalProcessor:
 
             if existing_scrap.state in ['PROCESSED']:
                 print(f"Scrap with id {scrap.id} is in state {existing_scrap.state}. Skipping.")
+                self.repository.clear_scrap_content(scrap.id)
+
                 return
 
             if existing_scrap.state == 'FAILED':
@@ -32,6 +34,8 @@ class LocalProcessor:
 
             if credentials_found:
                 self._save_chunks_to_elasticsearch(scrap)
+                self.repository.clear_scrap_content(scrap.id)
+
             else:
                 self.repository.clear_scrap_content(scrap.id)
 
