@@ -14,8 +14,14 @@ CREATE TABLE IF NOT EXISTS scrapes (
     timestamp TIMESTAMP,
     occurrence_time TIMESTAMP,
     processing_start_time TIMESTAMP,
-    content BYTEA,
-    elastic_id VARCHAR
+    content BYTEA
+);
+
+CREATE TABLE IF NOT EXISTS elastic_chunks (
+    id SERIAL PRIMARY KEY,
+    scrap_id INTEGER REFERENCES scrapes(id),
+    chunk_number INTEGER NOT NULL,
+    elastic_id VARCHAR(255)
 );
 
 CREATE INDEX IF NOT EXISTS idx_scrapes_hash ON scrapes(hash);

@@ -10,7 +10,6 @@ class PostgresRepository:
         self.conn = self._connect()
 
     def _connect(self):
-        """Establish a new connection to the database."""
         try:
             return psycopg2.connect(**self.config)
         except psycopg2.Error as e:
@@ -18,18 +17,49 @@ class PostgresRepository:
             raise
 
     def get_connection(self):
-        """Reconnect if the connection is closed or None."""
         if self.conn is None or self.conn.closed != 0:
             self.logger.info("Reconnecting to PostgreSQL...")
             self.conn = self._connect()
         return self.conn
 
+    def save_elastic_chunk(self, scrap_id, chunk_number, elastic_id):
+        query = """
+        INSERT INTO elastic_chunks (scrap_id, chunk_number, elastic_id)
+        VALUES (%s, %s, %s)
+        RETURNING id
+        """
+        try:
+            conn = self.get_connection()
+            with conn.cursor() as cursor:
+                cursor.execute(query, (scrap_id, chunk_number, elastic_id))
+                chunk_id = cursor.fetchone()[0]
+            conn.commit()
+            self.logger.info(f"Elastic chunk {chunk_number} for scrap {scrap_id} saved successfully.")
+            return chunk_id
+        except Exception as e:
+            if self.conn:
+                self.conn.rollback()
+            self.logger.error(f"Failed to save elastic chunk {chunk_number} for scrap {scrap_id}: {e}")
+            return None
+
+    def clear_scrap_content(self, scrap_id):
+        query = "UPDATE scrapes SET content = NULL WHERE id = %s"
+        try:
+            conn = self.get_connection()
+            with conn.cursor() as cursor:
+                cursor.execute(query, (scrap_id,))
+            conn.commit()
+            self.logger.info(f"Content for scrap {scrap_id} cleared.")
+        except Exception as e:
+            if self.conn:
+                self.conn.rollback()
+            self.logger.error(f"Failed to clear content for scrap {scrap_id}: {e}")
+
     def save_scrap_reference(self, scrap, state='NEW'):
-        """Save the scrap reference to the database."""
         processing_start_time = datetime.now() if state == 'PROCESSING' else None
         query = """
-        INSERT INTO scrapes (hash, source, filename, scrape_time, file_path, state, timestamp, content, processing_start_time, occurrence_time, elastic_id)
-        VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, NULL)
+        INSERT INTO scrapes (hash, source, filename, scrape_time, file_path, state, timestamp, content, processing_start_time, occurrence_time)
+        VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
         RETURNING id
         """
         try:
@@ -57,9 +87,8 @@ class PostgresRepository:
             return None
 
     def get_scrap_by_filename_and_hash(self, filename, file_hash):
-        """Fetch a scrap by filename and hash."""
         query = """
-        SELECT id, hash, source, filename, file_path, state, timestamp, content, occurrence_time, elastic_id
+        SELECT id, hash, source, filename, file_path, state, timestamp, content, occurrence_time
         FROM scrapes
         WHERE filename = %s AND hash = %s
         ORDER BY occurrence_time DESC
@@ -80,8 +109,7 @@ class PostgresRepository:
                         state=result[5],
                         timestamp=result[6],
                         content=result[7],
-                        occurrence_time=result[8],
-                        elastic_id=result[9]
+                        occurrence_time=result[8]
                     )
                 return None
         except Exception as e:
@@ -89,7 +117,6 @@ class PostgresRepository:
             return None
 
     def update_scrap_state(self, scrap_id, state):
-        """Update the state of a scrap."""
         query = "UPDATE scrapes SET state = %s WHERE id = %s"
         try:
             conn = self.get_connection()
@@ -102,47 +129,35 @@ class PostgresRepository:
                 self.conn.rollback()
             self.logger.error(f"Failed to update scrap {scrap_id}: {e}")
 
-    def update_scrap_with_elastic_link(self, scrap_id, elastic_id):
-        """Update scrap by adding the full Elasticsearch link and clearing content."""
-        
-        elastic_link = f"http://{self.config['host']}:{self.config['port']}/scrapes/_doc/{elastic_id}"
-
+    def get_scrap_by_id(self, scrap_id):
         query = """
-        UPDATE scrapes
-        SET elastic_id = %s, content = NULL
-        WHERE id = %s
-        """
-        try:
-            conn = self.get_connection()
-            with conn.cursor() as cursor:
-                cursor.execute(query, (elastic_link, scrap_id))
-            conn.commit()
-            self.logger.info(f"Scrap {scrap_id} updated with elastic_id {elastic_link} and content cleared.")
-        except Exception as e:
-            if self.conn:
-                self.conn.rollback()
-            self.logger.error(f"Failed to update scrap {scrap_id} with elastic_link {elastic_link}: {e}")
-
-    def clear_scrap_content(self, scrap_id):
-        """Clear the content of a scrap after processing."""
-        query = """
-        UPDATE scrapes
-        SET content = NULL
+        SELECT id, hash, source, filename, file_path, state, timestamp, content, occurrence_time
+        FROM scrapes
         WHERE id = %s
         """
         try:
             conn = self.get_connection()
             with conn.cursor() as cursor:
                 cursor.execute(query, (scrap_id,))
-            conn.commit()
-            self.logger.info(f"Content for scrap {scrap_id} cleared.")
+                result = cursor.fetchone()
+                if result:
+                    return Scrap(
+                        id=result[0],
+                        hash=result[1],
+                        source=result[2],
+                        filename=result[3],
+                        file_path=result[4],
+                        state=result[5],
+                        timestamp=result[6],
+                        content=result[7],
+                        occurrence_time=result[8],
+                    )
+                return None
         except Exception as e:
-            if self.conn:
-                self.conn.rollback()
-            self.logger.error(f"Failed to clear content for scrap {scrap_id}: {e}")
+            self.logger.error(f"Failed to fetch scrap by id {scrap_id}: {e}")
+            return None
 
     def get_unprocessed_scraps(self, processing_timeout_minutes=30):
-        """Fetch all unprocessed scraps or scraps stuck in 'PROCESSING' for too long."""
         query = """
         SELECT id, hash, source, filename, file_path, state, timestamp, content, occurrence_time
         FROM scrapes
@@ -172,38 +187,7 @@ class PostgresRepository:
             self.logger.error(f"Failed to fetch unprocessed scraps: {e}")
             return []
 
-    def get_scrap_by_id(self, scrap_id):
-        """Fetch a scrap by ID."""
-        query = """
-        SELECT id, hash, source, filename, file_path, state, timestamp, content, occurrence_time, elastic_id
-        FROM scrapes
-        WHERE id = %s
-        """
-        try:
-            conn = self.get_connection()
-            with conn.cursor() as cursor:
-                cursor.execute(query, (scrap_id,))
-                result = cursor.fetchone()
-                if result:
-                    return Scrap(
-                        id=result[0],
-                        hash=result[1],
-                        source=result[2],
-                        filename=result[3],
-                        file_path=result[4],
-                        state=result[5],
-                        timestamp=result[6],
-                        content=result[7],
-                        occurrence_time=result[8],
-                        elastic_id=result[9]
-                    )
-                return None
-        except Exception as e:
-            self.logger.error(f"Failed to fetch scrap by id {scrap_id}: {e}")
-            return None
-
     def get_credential_patterns(self):
-        """Fetch all credential patterns from the database."""
         query = "SELECT pattern FROM credential_patterns"
         try:
             conn = self.get_connection()
@@ -216,7 +200,25 @@ class PostgresRepository:
             return []
 
     def close(self):
-        """Close the database connection."""
         if self.conn:
             self.conn.close()
             self.logger.info("Postgres connection closed.")
+
+    def get_processed_filenames(self):
+        """
+        Fetches all filenames of scraps that have been processed.
+        """
+        query = """
+        SELECT filename
+        FROM scrapes
+        WHERE state = 'PROCESSED'
+        """
+        try:
+            conn = self.get_connection()
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                filenames = [row[0] for row in cursor.fetchall()]
+            return filenames
+        except Exception as e:
+            self.logger.error(f"Failed to fetch processed filenames: {e}")
+            return []

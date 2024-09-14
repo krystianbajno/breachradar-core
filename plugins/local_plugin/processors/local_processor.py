@@ -1,15 +1,14 @@
-from core.app import App
-from core.events.event_system import EventSystem
 from core.repositories.elastic_repository import ElasticRepository
 from core.repositories.postgres_repository import PostgresRepository
 from core.processors.core_processor import CoreProcessor
+from core.entities.elastic_chunk import ElasticChunk
 
 class LocalProcessor:
-    def __init__(self, app: App):
+    def __init__(self, app):
         self.repository: PostgresRepository = app.make('PostgresRepository')
         self.elastic_repository: ElasticRepository = app.make('ElasticRepository')
         self.core_processor: CoreProcessor = app.make('CoreProcessor')
-        self.event_system: EventSystem = app.make('EventSystem')
+        self.event_system = app.make('EventSystem')
 
         self.event_system.register_listener('COLLECTED', self.process)
 
@@ -32,8 +31,7 @@ class LocalProcessor:
             credentials_found = self._process_scrap_content(scrap)
 
             if credentials_found:
-                elastic_link = self.elastic_repository.save_scrap(scrap)
-                self.repository.update_scrap_with_elastic_link(scrap.id, elastic_link)
+                self._save_chunks_to_elasticsearch(scrap)
             else:
                 self.repository.clear_scrap_content(scrap.id)
 
@@ -45,7 +43,6 @@ class LocalProcessor:
             print(f"Error processing scrap with id {scrap.id}: {e}")
 
     def _process_scrap_content(self, scrap):
-        """Process the content to check for credentials."""
         try:
             file_content = scrap.content.decode('utf-8', errors='replace')
         except AttributeError:
@@ -57,3 +54,21 @@ class LocalProcessor:
             scrap.content = file_content
             return True
         return False
+
+    def _save_chunks_to_elasticsearch(self, scrap):
+        content = scrap.content
+        chunk_size = 1000000 
+        chunks = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
+        
+        elastic_ids = []
+        for index, chunk in enumerate(chunks):
+            elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=index + 1, chunk_content=chunk)
+            elastic_id = self.elastic_repository.save_scrap_chunk(elastic_chunk)
+            self.repository.save_elastic_chunk(
+                scrap.id,
+                elastic_chunk.chunk_number,
+                elastic_id
+            )
+            elastic_ids.append(elastic_id)
+        
+        return elastic_ids

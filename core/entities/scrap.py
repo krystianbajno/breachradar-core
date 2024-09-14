@@ -13,4 +13,3 @@ class Scrap:
         self.content = content
         self.occurrence_time = occurrence_time 
         self.attachments = attachments or []
-        self.elastic_id = elastic_id

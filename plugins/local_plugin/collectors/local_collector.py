@@ -1,3 +1,4 @@
+# plugins/local_plugin/collectors/local_collector.py
 import os
 from datetime import datetime
 from core.collectors.collector_interface import CollectorInterface
@@ -11,12 +12,14 @@ class LocalCollector(CollectorInterface):
         self.source: LocalService = app.make('LocalService')
         self.repository: PostgresRepository = app.make('PostgresRepository')
         self.event_system: EventSystem = app.make('EventSystem')
+        self.processed_filenames = set(self.repository.get_processed_filenames())
 
     def collect(self):
         scrape_files = self.source.fetch_scrape_files()
         if not scrape_files:
             print("No new files to process.")
             return
+        
         self.process_files(scrape_files)
 
     def process_files(self, files):
@@ -25,12 +28,12 @@ class LocalCollector(CollectorInterface):
 
     def on_new_file_detected(self, file_meta):
         occurrence_time = self._get_file_modification_time(file_meta['file_path'])
-
-        existing_scrap = self.repository.get_scrap_by_filename_and_hash(file_meta['filename'], file_meta['hash'])
+        self.processed_filenames = set(self.repository.get_processed_filenames())
         
-        if existing_scrap:
+        if file_meta["filename"] in self.processed_filenames:
+            print(f"File {file_meta['filename']} already processed.")
             return
-
+        
         scrap = self.create_scrap(file_meta, occurrence_time)
 
         scrap_id = self.repository.save_scrap_reference(scrap, state='PROCESSING')
@@ -40,6 +43,7 @@ class LocalCollector(CollectorInterface):
             self.event_system.trigger_event('COLLECTED', scrap)
         else:
             print(f"Failed to save scrap for file {file_meta['filename']}.")
+        self.processed_filenames = set(self.repository.get_processed_filenames())
 
     def create_scrap(self, file_meta, occurrence_time):
         creation_time = self._get_file_creation_time(file_meta['file_path'])
