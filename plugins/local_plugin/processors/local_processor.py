@@ -1,20 +1,20 @@
+from core.app import App
+from core.events.event_system import EventSystem
 from core.repositories.elastic_repository import ElasticRepository
 from core.repositories.postgres_repository import PostgresRepository
 from core.processors.core_processor import CoreProcessor
 
 class LocalProcessor:
-    def __init__(self, app):
-        self.repository = app.make('PostgresRepository')
-        self.elastic_repository = app.make('ElasticRepository')
-        self.core_processor = app.make('CoreProcessor')
-        self.event_system = app.make('EventSystem')
+    def __init__(self, app: App):
+        self.repository: PostgresRepository = app.make('PostgresRepository')
+        self.elastic_repository: ElasticRepository = app.make('ElasticRepository')
+        self.core_processor: CoreProcessor = app.make('CoreProcessor')
+        self.event_system: EventSystem = app.make('EventSystem')
 
-        # Register as a listener to the 'COLLECTED' event
         self.event_system.register_listener('COLLECTED', self.process)
 
     def process(self, scrap):
         try:
-            # Check if the scrap already exists in the database
             existing_scrap = self.repository.get_scrap_by_id(scrap.id)
             if not existing_scrap:
                 print(f"Scrap with id {scrap.id} does not exist in the database. Skipping.")

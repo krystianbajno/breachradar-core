@@ -1,9 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
+from core.events.event_system import EventSystem
+
 class ProcessingSystem:
-    def __init__(self, event_system, processors, repository):
-        self.event_system = event_system
+    def __init__(self, event_system: EventSystem, processors, repository):
+        self.event_system: EventSystem = event_system
         self.processors = processors
         self.repository = repository
         self.executor = ThreadPoolExecutor()
@@ -33,7 +35,6 @@ class ProcessingSystem:
     def _run_processor(self, processor, scrap):
         try:
             processor.process(scrap)
-            self.repository.update_scrap_state(scrap.id, "PROCESSED")
         except Exception as e:
             print(f"Error running processor {processor}: {e}")
 

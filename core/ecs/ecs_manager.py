@@ -1,12 +1,14 @@
 from concurrent.futures import ThreadPoolExecutor
+from core.app import App
+from core.events.event_system import EventSystem
 from core.systems.collector_system import CollectorSystem
 from core.systems.processing_system import ProcessingSystem
 import time
 
 class ECSManager:
-    def __init__(self, app):
-        self.app = app
-        self.event_system = self.app.make('EventSystem')
+    def __init__(self, app: App):
+        self.app: App = app
+        self.event_system: EventSystem = self.app.make('EventSystem')
 
     def run(self):
         collector_system = self.app.get_system(CollectorSystem.__name__)

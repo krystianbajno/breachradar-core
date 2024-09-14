@@ -1,8 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 
+from core.events.event_system import EventSystem
+
 class CollectorSystem:
-    def __init__(self, event_system, collectors):
-        self.event_system = event_system
+    def __init__(self, event_system: EventSystem, collectors):
+        self.event_system: EventSystem = event_system
         self.collectors = collectors
         
     def run_collectors(self):

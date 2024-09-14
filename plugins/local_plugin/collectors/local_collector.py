@@ -2,12 +2,15 @@ import os
 from datetime import datetime
 from core.collectors.collector_interface import CollectorInterface
 from core.entities.scrap import Scrap
+from core.events.event_system import EventSystem
+from core.repositories.postgres_repository import PostgresRepository
+from plugins.local_plugin.services.local_service import LocalService
 
 class LocalCollector(CollectorInterface):
     def __init__(self, app):
-        self.source = app.make('LocalService')
-        self.repository = app.make('PostgresRepository')
-        self.event_system = app.make('EventSystem')
+        self.source: LocalService = app.make('LocalService')
+        self.repository: PostgresRepository = app.make('PostgresRepository')
+        self.event_system: EventSystem = app.make('EventSystem')
 
     def collect(self):
         scrape_files = self.source.fetch_scrape_files()
