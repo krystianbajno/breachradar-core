@@ -74,5 +74,5 @@ class Config:
             "port": int(self.get('elasticsearch.port', 9200)),
             "scheme": self.get('elasticsearch.scheme', 'http'),
             "user": self.get('elasticsearch.user', 'elastic'),
-            "password": self.get('elasticsearch.password', 'password')
+            "password": self.get('elasticsearch.password', 'password'),
         }

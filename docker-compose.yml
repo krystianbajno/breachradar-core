@@ -10,7 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
-      - ./setup:/docker-entrypoint-initdb.d/
     networks:
       - cti_network
     healthcheck:
@@ -23,37 +22,17 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
     environment:
-      discovery.type: single-node
-      ELASTIC_PASSWORD: ${ELASTICSEARCH_PASSWORD}
-      xpack.security.enabled: "true"
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=false
     ports:
       - "9200:9200"
     volumes:
-      - ./data/es_data:/usr/share/elasticsearch/data
-      - ./setup/init_kibana.sh:/usr/share/elasticsearch/init-elasticsearch.sh
+      - es_data:/usr/share/elasticsearch/data
     networks:
       - cti_network
-    entrypoint: ["/usr/share/elasticsearch/init-elasticsearch.sh"]
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail -u elastic:${ELASTICSEARCH_PASSWORD} localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.10.1
-    environment:
-      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
-      ELASTICSEARCH_API_KEY_FILE: "/usr/share/kibana/elastic_api_key.env"
-    ports:
-      - "5601:5601"
-    networks:
-      - cti_network
-    depends_on:
-      - elasticsearch
-    healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail localhost:5601/api/status || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -61,9 +40,7 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
   es_data:
-    driver: local
 
 networks:
   cti_network:

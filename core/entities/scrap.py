@@ -1,10 +1,16 @@
+# core/entities/scrap.py
+from datetime import datetime
+
 class Scrap:
-    def __init__(self, source=None, content=None, attachments=None, state="NEW", filename=None, file_path=None, hash=None, timestamp=None):
+    def __init__(self, id=None, hash=None, source=None, filename=None, file_path=None, state='NEW', timestamp=None, content=None, occurrence_time=None, attachments=None, elastic_id=None):
+        self.id = id
+        self.hash = hash
         self.source = source
-        self.content = content
         self.filename = filename
         self.file_path = file_path
-        self.attachments = attachments if attachments else []
         self.state = state
-        self.hash = hash
         self.timestamp = timestamp
+        self.content = content
+        self.occurrence_time = occurrence_time 
+        self.attachments = attachments or []
+        self.elastic_id = elastic_id

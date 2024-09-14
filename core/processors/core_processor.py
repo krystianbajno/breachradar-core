@@ -1,16 +1,17 @@
+# core/processors/core_processor.py
 import re
 
 class CoreProcessor:
     def __init__(self, repository):
         self.repository = repository
+        self.patterns = self.load_patterns()
 
-    def get_regexes(self):
-        return self.repository.get_credential_regexes()
+    def load_patterns(self):
+        return self.repository.get_credential_patterns()
 
     def check_for_credentials(self, content):
-        found_credentials = []
-        for pattern in self.get_regexes():
+        credentials = []
+        for pattern in self.patterns:
             matches = re.findall(pattern, content)
-            if matches:
-                found_credentials.extend(matches)
-        return found_credentials
+            credentials.extend(matches)
+        return credentials if credentials else None

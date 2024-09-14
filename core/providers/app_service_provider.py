@@ -8,12 +8,10 @@ class AppServiceProvider:
         self.app = app
 
     def register(self):
-        postgres_config = self.app.make('config').get_postgres_config()
         elasticsearch_config = self.app.make('config').get_elasticsearch_config()
 
         self.app.bind('EventSystem', lambda: EventSystem())
 
-        self.app.bind(PostgresRepository.__name__, lambda: PostgresRepository(postgres_config))
         self.app.bind(ElasticRepository.__name__, lambda: ElasticRepository(elasticsearch_config))
 
         self.app.bind(CoreProcessor.__name__, lambda: CoreProcessor(self.app.make(PostgresRepository.__name__)))

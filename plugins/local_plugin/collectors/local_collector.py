@@ -1,65 +1,64 @@
 import os
-import time
+from datetime import datetime
 from core.collectors.collector_interface import CollectorInterface
 from core.entities.scrap import Scrap
-import hashlib
 
 class LocalCollector(CollectorInterface):
     def __init__(self, app):
         self.source = app.make('LocalService')
         self.repository = app.make('PostgresRepository')
-        self.start_directory_monitor()
+        self.event_system = app.make('EventSystem')
 
     def collect(self):
         scrape_files = self.source.fetch_scrape_files()
-        return self.process_files(scrape_files)
-
-    def start_directory_monitor(self):
-        self.source.start_directory_monitor(self.on_new_file_detected)
-
-    def on_new_file_detected(self, file_path):
-        print(f"Processing new file: {file_path}")
-        file_meta = self.source.get_file_metadata(file_path)
-        self.process_files([file_meta])
+        if not scrape_files:
+            print("No new files to process.")
+            return
+        self.process_files(scrape_files)
 
     def process_files(self, files):
-        scrapes = []
         for file_meta in files:
-            if self.file_already_scraped(file_meta['hash']):
-                print(f"File {file_meta['filename']} (hash: {file_meta['hash']}) has already been scraped. Skipping.")
-                continue
+            self.on_new_file_detected(file_meta)
 
-            scrap = self.create_scrap(file_meta)
-            scrapes.append(scrap)
+    def on_new_file_detected(self, file_meta):
+        occurrence_time = self._get_file_modification_time(file_meta['file_path'])
 
-            self.repository.save_scrap_reference(scrap, file_meta['file_path'])
-            print(f"File {file_meta['filename']} saved to the database.")
+        existing_scrap = self.repository.get_scrap_by_filename_and_hash(file_meta['filename'], file_meta['hash'])
+        
+        if existing_scrap:
+            return
 
-        return scrapes
+        scrap = self.create_scrap(file_meta, occurrence_time)
 
-    def create_scrap(self, file_meta):
-        file_hash = self.hash_content(file_meta['content'])
+        scrap_id = self.repository.save_scrap_reference(scrap, state='PROCESSING')
+        if scrap_id:
+            scrap.id = scrap_id
+            print(f"File {file_meta['filename']} is marked as processing with id {scrap_id}.")
+            self.event_system.trigger_event('COLLECTED', scrap)
+        else:
+            print(f"Failed to save scrap for file {file_meta['filename']}.")
+
+    def create_scrap(self, file_meta, occurrence_time):
         creation_time = self._get_file_creation_time(file_meta['file_path'])
-
         return Scrap(
+            hash=file_meta['hash'],
             source='local',
-            content=file_meta['content'],
             filename=file_meta['filename'],
-            file_path=file_meta["file_path"],
+            file_path=file_meta['file_path'],
             timestamp=creation_time,
-            hash=file_hash
+            content=file_meta['content'],
+            state='PROCESSING',
+            occurrence_time=occurrence_time
         )
-
-    def file_already_scraped(self, file_hash):
-        existing_scrap = self.repository.get_scrap_by_hash(file_hash)
-        return existing_scrap is not None
-
-    @staticmethod
-    def hash_content(content):
-        return hashlib.sha256(content).hexdigest()
 
     def _get_file_creation_time(self, file_path):
         try:
-            return time.ctime(os.path.getctime(file_path))
+            return datetime.fromtimestamp(os.path.getctime(file_path))
+        except OSError:
+            return None
+
+    def _get_file_modification_time(self, file_path):
+        try:
+            return datetime.fromtimestamp(os.path.getmtime(file_path))
         except OSError:
             return None

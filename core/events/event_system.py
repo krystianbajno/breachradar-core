@@ -1,12 +1,10 @@
-from collections import defaultdict
-
 class EventSystem:
     def __init__(self):
-        self.listeners = defaultdict(list)
+        self.listeners = {}
 
-    def register_listener(self, event_type, listener):
-        self.listeners[event_type].append(listener)
+    def register_listener(self, event_name, callback):
+        self.listeners.setdefault(event_name, []).append(callback)
 
-    def trigger_event(self, event_type, data=None):
-        for listener in self.listeners.get(event_type, []):
-            listener(data)
+    def trigger_event(self, event_name, *args, **kwargs):
+        for callback in self.listeners.get(event_name, []):
+            callback(*args, **kwargs)

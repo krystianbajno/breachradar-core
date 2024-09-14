@@ -9,13 +9,13 @@ class ProcessingSystem:
         self.executor = ThreadPoolExecutor()
         self.polling_interval = 1
 
-        self.event_system.register_listener('SCRAP_COLLECTED', self.process_scrap)
+        self.event_system.register_listener('COLLECTED', self.process_scrap)
 
     def run_processors(self):
         while True:
             try:
                 self.executor.submit(self._await_scrap_events)
-                self._process_unprocessed_scraps()  # Use repository method
+                self._process_unprocessed_scraps()
             except RuntimeError as e:
                 print(f"Error submitting task: {e}")
             time.sleep(self.polling_interval)
@@ -33,7 +33,7 @@ class ProcessingSystem:
     def _run_processor(self, processor, scrap):
         try:
             processor.process(scrap)
-            self.repository.update_scrap_state(scrap.hash, "SCRAP_PROCESSED")
+            self.repository.update_scrap_state(scrap.id, "PROCESSED")
         except Exception as e:
             print(f"Error running processor {processor}: {e}")
 

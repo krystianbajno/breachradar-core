@@ -14,8 +14,11 @@ class CollectorSystem:
         try:
             scrapes = collector.collect()
             
+            if not scrapes:
+                return
+            
             for scrap in scrapes:
-                self.event_system.trigger_event('SCRAP_COLLECTED', scrap)
+                self.event_system.trigger_event('COLLECTED', scrap)
                 
         except Exception as e:
             print(f"Error running collector {collector}: {e}")

@@ -1,5 +1,7 @@
 import os
 
+from core.repositories.postgres_repository import PostgresRepository
+
 class MigrationServiceProvider:
     def __init__(self, app, migrations_dir='core/migrations'):
         self.app = app
@@ -7,6 +9,10 @@ class MigrationServiceProvider:
 
     def register(self):
         self.app.bind('MigrationService', lambda: self)
+        postgres_config = self.app.make('config').get_postgres_config()
+
+        self.app.bind(PostgresRepository.__name__, lambda: PostgresRepository(postgres_config))
+        postgres_config = self.app.make('config').get_postgres_config()
 
     def boot(self):
         pass
