@@ -14,127 +14,108 @@ const searchClient = Client({
   url: '/api/search'
 })
 
+const downloadContent = (filename, content) => {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const HitView = ({ hit, detailsOpen }) => {
-  const downloadHitContent = () => {
-    const content = hit.filteredContent;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${hit.title.replace(/\s+/g, '_')}_content.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  const handleDownload = () => {
+    const filename = `${hit.title.replace(/\s+/g, '_')}_content.txt`;
+    downloadContent(filename, hit.filteredContent);
+  };
 
   return (
     <div className="hit__details">
       <details open={detailsOpen}>
         <summary className="hit-details-panel">
-          <h3 className="hit-details-header">{hit.title} - Part {hit.chunk_number}</h3>
-          <button className="download-btn" onClick={downloadHitContent}>Download</button>
+          <h3>{hit.title} - Part {hit.chunk_number}</h3>
+          <button className="download-btn" onClick={handleDownload}>Download</button>
         </summary>
         <pre>{hit.filteredContent}</pre>
       </details>
     </div>
-  )
-}
+  );
+};
 
 const CustomHits = ({ detailsOpen }) => {
   const { query } = useSearchBox();
   const { results } = useInstantSearch();
 
   if (results.nbHits === 0) {
-    return <p>No results found.</p>; 
+    return <p>No results found.</p>;
   }
 
   const processedHits = results.hits
     .map(hit => {
-      const resultsSplit = hit.content.split("\r\n");
-      const filteredResults = resultsSplit.filter(line => line.includes(query));
-      const filteredContent = filteredResults.join("\n");
+      const filteredContent = hit.content
+        .split("\r\n")
+        .filter(line => line.includes(query))
+        .join("\n");
       return { ...hit, filteredContent };
     })
-    .filter(hit => hit.filteredContent.trim() !== '');
+    .filter(hit => hit.filteredContent.trim());
 
   if (processedHits.length === 0) {
-    return <p>No relevant content found.</p>; 
+    return <p>No relevant content found.</p>;
   }
 
-  const downloadAllHitsContent = () => {
+  const downloadAllHits = () => {
     const allContent = processedHits
       .map(hit => `Title: ${hit.title} - Part ${hit.chunk_number}\n\n${hit.filteredContent}`)
       .join('\n\n-----\n\n');
-
-    const blob = new Blob([allContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'all_hits_content.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+    downloadContent('all_hits_content.txt', allContent);
+  };
 
   return (
     <div>
-      <div className={'main-hits-panel'}>
-        <div>
-          <SearchStatus/>
-        </div>
-        <button className="download-btn" onClick={downloadAllHitsContent}>Download All</button>
+      <div className="main-hits-panel">
+        <button className="download-btn" onClick={downloadAllHits}>Download All</button>
       </div>
       {processedHits.map(hit => (
         <HitView key={hit.objectID} hit={hit} detailsOpen={detailsOpen} />
       ))}
     </div>
   );
-}
+};
 
-function SearchStatus() {
+const SearchStatus = () => {
   const { status } = useInstantSearch();
-
-  if (status === 'loading') {
-    return <p>Loading...</p>; 
-  }
-  
-  return null;
-}
-
+  return status === 'loading' ? <p>Loading...</p> : null;
+};
 
 export default function Web() {
   const [detailsOpen, setDetailsOpen] = useState(true);
 
-  const toggleDetails = () => {
-    setDetailsOpen(prevState => !prevState);
-  };
+  const toggleDetails = () => setDetailsOpen(prev => !prev);
 
   return (
     <div className="container">
-      <h1>BreachRadar</h1>
-      <span>v0.0.1</span>
-      <InstantSearch 
-        indexName="scrapes_chunks"
-        searchClient={searchClient}
-        routing
-      >
+      <a className={"no-a"} href="/"><h1>Breach<span className={"radar"}>Radar</span></h1></a>
+      <div className={"version"}>v0.0.1 Sigma Edition</div>
+
+      <InstantSearch indexName="scrapes_chunks" searchClient={searchClient} routing>
         <div className="search-panel">
           <div className="search-panel__filters">
             <div className="searchbox">
               <SearchBox placeholder="Search in content" searchAsYouType={false} />
-              <SearchStatus/>
-              <span 
-                className={'radar-emoji'} 
+              <SearchStatus />
+              <span
+                className="radar-emoji"
                 onClick={toggleDetails}
                 style={{ cursor: 'pointer' }}
               >
                 📡
               </span>
             </div>
-
-            <div className="pagination">
+            <div className="stats">
               <Stats />
             </div>
           </div>
@@ -146,5 +127,5 @@ export default function Web() {
         </div>
       </InstantSearch>
     </div>
-  )
+  );
 }
