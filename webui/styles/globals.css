@@ -85,6 +85,20 @@ em {
   width: 100%;
 }
 
+.hit-details-panel {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 pre {
   width: 100%;
+}
+
+.download-btn {
+  background-color: black;
+  color: white;
+  padding: 4px 16px;
+  font-size: 1rem;
+  cursor: pointer;
 }

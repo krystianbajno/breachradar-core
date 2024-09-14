@@ -12,7 +12,7 @@ const apiClient = API(
       search_attributes: [
         { field: 'content', weight: 10 }, 
       ],
-      result_attributes: ['content'],
+      result_attributes: ['content', 'title'],
     }
   },
   { debug: false }
