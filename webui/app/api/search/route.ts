@@ -8,7 +8,7 @@ const apiClient = API(
     },
     search_settings: {
       highlight_attributes: ['content'],  
-      snippet_attributes: ['content:512'], 
+      snippet_attributes: ['content:1200'], 
       search_attributes: [
         { field: 'content', weight: 10 }, 
       ],
