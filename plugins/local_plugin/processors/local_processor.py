@@ -1,3 +1,5 @@
+from core.entities.scrap import Scrap
+from core.events.event_system import EventSystem
 from core.repositories.elastic_repository import ElasticRepository
 from core.repositories.postgres_repository import PostgresRepository
 from core.processors.core_processor import CoreProcessor
@@ -8,11 +10,11 @@ class LocalProcessor:
         self.repository: PostgresRepository = app.make('PostgresRepository')
         self.elastic_repository: ElasticRepository = app.make('ElasticRepository')
         self.core_processor: CoreProcessor = app.make('CoreProcessor')
-        self.event_system = app.make('EventSystem')
+        self.event_system: EventSystem = app.make('EventSystem')
 
         self.event_system.register_listener('COLLECTED', self.process)
 
-    def process(self, scrap):
+    def process(self, scrap: Scrap):
         try:
             existing_scrap = self.repository.get_scrap_by_id(scrap.id)
             if not existing_scrap:
@@ -46,7 +48,7 @@ class LocalProcessor:
             self.repository.update_scrap_state(scrap.id, 'FAILED')
             print(f"Error processing scrap with id {scrap.id}: {e}")
 
-    def _process_scrap_content(self, scrap):
+    def _process_scrap_content(self, scrap: Scrap):
         try:
             file_content = scrap.content.decode('utf-8', errors='replace')
         except AttributeError:
@@ -59,9 +61,10 @@ class LocalProcessor:
             return True
         return False
 
-    def _save_chunks_to_elasticsearch(self, scrap):
+    def _save_chunks_to_elasticsearch(self, scrap: Scrap):
         """Will save chunks, but keep whole lines"""
         content = scrap.content
+        title = scrap.filename
         chunk_size = 1000000  # 1MB chunk size
         elastic_ids = []
         current_chunk = []
@@ -72,9 +75,9 @@ class LocalProcessor:
             if current_chunk:  # Only save if there's content
                 chunk_content = ''.join(current_chunk)
                 chunk_number = len(elastic_ids) + 1
-                elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=chunk_number, chunk_content=chunk_content)
+                elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=chunk_number, chunk_content=chunk_content, title=title)
                 elastic_id = self.elastic_repository.save_scrap_chunk(elastic_chunk)
-                self.repository.save_elastic_chunk(scrap.id, chunk_number, elastic_id)
+                self.repository.save_elastic_chunk(scrap.id, chunk_number, elastic_id, title)
                 elastic_ids.append(elastic_id)
 
         for line in content.splitlines(keepends=True):  # Keep line breaks for full line chunks

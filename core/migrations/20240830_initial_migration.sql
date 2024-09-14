@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS elastic_chunks (
     id SERIAL PRIMARY KEY,
     scrap_id INTEGER REFERENCES scrapes(id),
     chunk_number INTEGER NOT NULL,
-    elastic_id VARCHAR(255)
+    elastic_id VARCHAR(255),
+    title TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_scrapes_hash ON scrapes(hash);

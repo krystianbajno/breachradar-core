@@ -22,16 +22,16 @@ class PostgresRepository:
             self.conn = self._connect()
         return self.conn
 
-    def save_elastic_chunk(self, scrap_id, chunk_number, elastic_id):
+    def save_elastic_chunk(self, scrap_id, chunk_number, elastic_id, title):
         query = """
-        INSERT INTO elastic_chunks (scrap_id, chunk_number, elastic_id)
-        VALUES (%s, %s, %s)
+        INSERT INTO elastic_chunks (scrap_id, chunk_number, elastic_id, title)
+        VALUES (%s, %s, %s, %s)
         RETURNING id
         """
         try:
             conn = self.get_connection()
             with conn.cursor() as cursor:
-                cursor.execute(query, (scrap_id, chunk_number, elastic_id))
+                cursor.execute(query, (scrap_id, chunk_number, elastic_id, title))
                 chunk_id = cursor.fetchone()[0]
             conn.commit()
             self.logger.info(f"Elastic chunk {chunk_number} for scrap {scrap_id} saved successfully.")
