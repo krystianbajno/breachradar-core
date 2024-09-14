@@ -7,6 +7,9 @@ h1 {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  background: #1a1a1a;
+  color: white;
 }
 
 em {
@@ -58,7 +61,7 @@ em {
   flex: 0 0 40%; 
   max-width: 40%; 
   padding-right: 20px;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid #3a3a3a;
 }
 
 .search-panel__results {
@@ -68,7 +71,7 @@ em {
 }
 
 .searchbox {
-  margin-bottom: 2rem;
+  margin-top: 32px;
   width: 100%;
 }
 
@@ -77,12 +80,22 @@ em {
   text-align: center;
 }
 
+.ais-SearchBox-input {
+  background: #1a1a1a;
+  color: white;
+  border: 1px solid #3a3a3a;
+  caret-color: white;
+  box-shadow: none;
+  border-radius: 8px;
+}
+
 .hit__details {
   padding: 10px;
-  border: 1px solid #ddd;
   margin-bottom: 20px;
   word-wrap: break-word;
   width: 100%;
+    border: 1px solid #3a3a3a;
+    padding: 16px;
 }
 
 .hit-details-panel {
@@ -91,14 +104,68 @@ em {
   justify-content: space-between;
 }
 
+.hit-details-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.hit-details-panel summary::marker {
+  display: none;
+}
+
+.hit-details-panel summary {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.hit-details-panel summary::before {
+  content: "";
+}
+
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+.radar-emoji {
+  font-size: 4rem;
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  cursor: crosshair;
+}
+
+.main-hits-panel {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 0;
+  margin-top: 32px;
+  padding: 16px;
+  width: 100%;
+}
+
 pre {
   width: 100%;
 }
 
+
 .download-btn {
-  background-color: black;
+  background-color: #1a1a1a;
   color: white;
-  padding: 4px 16px;
+  padding: 16px 32px;
   font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.download-btn:hover {
+  transition: 0.2s;
+  color: #af7fcf;
+}
+
+.hit-details-header {
   cursor: pointer;
 }

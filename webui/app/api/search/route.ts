@@ -10,9 +10,9 @@ const apiClient = API(
       highlight_attributes: ['content'],  
       snippet_attributes: ['content:1200'], 
       search_attributes: [
-        { field: 'content', weight: 10 }, 
+        { field: 'content', weight: 10 },
       ],
-      result_attributes: ['content', 'title'],
+      result_attributes: ['content', 'title', 'chunk_number'],
     }
   },
   { debug: false }
