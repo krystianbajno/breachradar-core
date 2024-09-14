@@ -60,19 +60,36 @@ class LocalProcessor:
         return False
 
     def _save_chunks_to_elasticsearch(self, scrap):
+        """Will save chunks, but keep whole lines"""
         content = scrap.content
-        chunk_size = 1000000 
-        chunks = [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
-        
+        chunk_size = 1000000  # 1MB chunk size
         elastic_ids = []
-        for index, chunk in enumerate(chunks):
-            elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=index + 1, chunk_content=chunk)
-            elastic_id = self.elastic_repository.save_scrap_chunk(elastic_chunk)
-            self.repository.save_elastic_chunk(
-                scrap.id,
-                elastic_chunk.chunk_number,
-                elastic_id
-            )
-            elastic_ids.append(elastic_id)
-        
+        current_chunk = []
+        current_chunk_size = 0
+
+        def save_current_chunk():
+            """Saves the current chunk to Elasticsearch and resets the chunk state."""
+            if current_chunk:  # Only save if there's content
+                chunk_content = ''.join(current_chunk)
+                chunk_number = len(elastic_ids) + 1
+                elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=chunk_number, chunk_content=chunk_content)
+                elastic_id = self.elastic_repository.save_scrap_chunk(elastic_chunk)
+                self.repository.save_elastic_chunk(scrap.id, chunk_number, elastic_id)
+                elastic_ids.append(elastic_id)
+
+        for line in content.splitlines(keepends=True):  # Keep line breaks for full line chunks
+            line_size = len(line.encode('utf-8'))
+
+            # If adding the line exceeds the chunk size, save the current chunk first
+            if current_chunk_size + line_size > chunk_size:
+                save_current_chunk()
+                current_chunk, current_chunk_size = [], 0  # Reset for the next chunk
+
+            # Add the line to the current chunk
+            current_chunk.append(line)
+            current_chunk_size += line_size
+
+        # Save any remaining content in the last chunk
+        save_current_chunk()
+
         return elastic_ids

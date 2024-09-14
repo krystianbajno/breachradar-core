@@ -1,4 +1,3 @@
-# core/processors/core_processor.py
 import re
 
 class CoreProcessor:

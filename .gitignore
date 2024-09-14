@@ -3,7 +3,7 @@ data/scraps/*
 data/postgres_data/*
 data/es_data/*
 .env
-
+.env.local
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
