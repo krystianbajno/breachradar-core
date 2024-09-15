@@ -19,7 +19,8 @@ class ElasticRepository:
                 "scrap_id": elastic_chunk.scrap_id,
                 "chunk_number": elastic_chunk.chunk_number,
                 "content": elastic_chunk.chunk_content,
-                "title": elastic_chunk.title
+                "title": elastic_chunk.title,
+                "hash": elastic_chunk.hash
             })
             elastic_id = response['_id']
             self.logger.info(f"Elastic chunk {elastic_chunk.chunk_number} for scrap {elastic_chunk.scrap_id} indexed in Elasticsearch with ID {elastic_id}.")

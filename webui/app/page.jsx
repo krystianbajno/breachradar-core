@@ -36,7 +36,10 @@ const HitView = ({ hit, detailsOpen }) => {
     <div className="hit__details">
       <details open={detailsOpen}>
         <summary className="hit-details-panel">
-          <h3>{hit.title} - Part {hit.chunk_number}</h3>
+          <div>
+            <h3>{hit.title} - Part {hit.chunk_number}</h3>
+            <p className={'hash'}>{hit.hash}</p>
+          </div>
           <button className="download-btn" onClick={handleDownload}>Download</button>
         </summary>
         <pre>{hit.filteredContent}</pre>
@@ -92,7 +95,7 @@ const SearchStatus = () => {
 };
 
 export default function Web() {
-  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const toggleDetails = () => setDetailsOpen(prev => !prev);
 
@@ -105,7 +108,7 @@ export default function Web() {
         <div className="search-panel">
           <div className="search-panel__filters">
             <div className="searchbox">
-              <SearchBox placeholder="Search in content" searchAsYouType={false} />
+              <SearchBox placeholder="Search in content, hash" searchAsYouType={false} />
               <SearchStatus />
               <span
                 className="radar-emoji"

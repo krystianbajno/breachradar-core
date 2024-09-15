@@ -175,12 +175,17 @@ pre {
   font-weight: 800;
   font-family: 'Poppins', sans-serif;
   transition: color 0.2s;
+    max-height: 64px;
 }
 
 .download-btn:hover {
   color: var(--btn-hover-color);
 }
 
+.hash {
+  color: #bababa;
+  cursor: text;
+}
 .radar-emoji {
   font-size: 4rem;
   display: flex;

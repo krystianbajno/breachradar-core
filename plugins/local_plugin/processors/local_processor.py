@@ -65,6 +65,8 @@ class LocalProcessor:
         """Will save chunks, but keep whole lines"""
         content = scrap.content
         title = scrap.filename
+        hash = scrap.hash
+
         chunk_size = 1000000  # 1MB chunk size
         elastic_ids = []
         current_chunk = []
@@ -75,7 +77,15 @@ class LocalProcessor:
             if current_chunk:  # Only save if there's content
                 chunk_content = ''.join(current_chunk)
                 chunk_number = len(elastic_ids) + 1
-                elastic_chunk = ElasticChunk(scrap_id=scrap.id, chunk_number=chunk_number, chunk_content=chunk_content, title=title)
+                
+                elastic_chunk = ElasticChunk(
+                    scrap_id=scrap.id,
+                    chunk_number=chunk_number,
+                    chunk_content=chunk_content,
+                    title=title,
+                    hash=hash
+                )
+                
                 elastic_id = self.elastic_repository.save_scrap_chunk(elastic_chunk)
                 self.repository.save_elastic_chunk(scrap.id, chunk_number, elastic_id, title)
                 elastic_ids.append(elastic_id)

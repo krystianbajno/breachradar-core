@@ -7,12 +7,11 @@ const apiClient = API(
       host: `${process.env.ELASTIC_SEARCH_SCHEME}://${process.env.ELASTIC_HOST}:${process.env.ELASTIC_PORT}`,
     },
     search_settings: {
-      highlight_attributes: ['content'],  
-      snippet_attributes: ['content:1200'], 
       search_attributes: [
         { field: 'content', weight: 10 },
+        { field: 'hash', weight: 10 },
       ],
-      result_attributes: ['content', 'title', 'chunk_number'],
+      result_attributes: ['content', 'title', 'chunk_number', 'hash'],
     }
   },
   { debug: false }
